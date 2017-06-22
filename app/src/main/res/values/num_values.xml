@@ -3,6 +3,6 @@
 
     <item name="alpha" format="float" type="dimen">0.9</item>
     <item name="threshold" format="float" type="dimen">10</item>
-    <item name="scale" format="float" type="dimen">0.5</item>
+    <item name="scale" format="float" type="dimen">2</item>
 
 </resources>

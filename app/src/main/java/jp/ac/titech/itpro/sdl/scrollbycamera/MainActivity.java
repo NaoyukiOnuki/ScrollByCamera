@@ -1,5 +1,7 @@
 package jp.ac.titech.itpro.sdl.scrollbycamera;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -14,6 +16,7 @@ import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
+import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
@@ -39,8 +42,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     int scrollHorizontal = 0;
     float alpha, threshold, scale;
 
-    Vector2D vvector = new Vector2D(0, 1);
-    Vector2D hvector = new Vector2D(1, 0);
+    Vector2D vvector = new Vector2D(1, 0);
+    Vector2D hvector = new Vector2D(0, 1);
 
     boolean buttonPressed = false;
     double[] fingerColor = new double[3];
@@ -60,11 +63,13 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         public void onManagerConnected(int status) {
             switch (status) {
                 case LoaderCallbackInterface.SUCCESS:
+                    Log.d(TAG, "callback SUCCESS");
                     mCameraView.enableView();
                     pts_prev = new MatOfPoint2f();
                     pts_next = new MatOfPoint2f();
                     break;
                 default:
+                    Log.d(TAG, "callback DEFAULT");
                     super.onManagerConnected(status);
                     break;
             }
@@ -76,14 +81,26 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        Log.d(TAG, "onCreate");
+
         TypedValue outValue = new TypedValue();
         getResources().getValue(R.dimen.alpha, outValue, true);
         alpha = outValue.getFloat();
+        outValue = new TypedValue();
         getResources().getValue(R.dimen.threshold, outValue, true);
         threshold = outValue.getFloat();
+        outValue = new TypedValue();
         getResources().getValue(R.dimen.scale, outValue, true);
         scale = outValue.getFloat();
         Log.d(TAG, "alpha = " + alpha);
+
+        SharedPreferences pref = getPreferences(MODE_PRIVATE);
+        float x1 = pref.getFloat(getString(R.string.key_x1), 1);
+        float y1 = pref.getFloat(getString(R.string.key_y1), 0);
+        float x2 = pref.getFloat(getString(R.string.key_x2), 0);
+        float y2 = pref.getFloat(getString(R.string.key_y2), 1);
+        vvector = new Vector2D(x1, y1);
+        hvector = new Vector2D(x2, y2);
 
         webView = (WebView) findViewById(R.id.web_view);
         //リンクをタップしたときに標準ブラウザを起動させない
@@ -108,6 +125,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     @Override
     public void onCameraViewStarted(int width, int height) {
+        Log.d(TAG, "onCameraViewStarted");
         image = new Mat(height, width, CvType.CV_8UC3);
         image_small = new Mat(height/8, width/8, CvType.CV_8UC3);
         image_prev = new Mat(image_small.rows(), image_small.cols(), image_small.type());
@@ -129,28 +147,38 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         ArrayList<Double> verticalDiff = new ArrayList<>();
         ArrayList<Double> horizontalDiff = new ArrayList<>();
 
-        Log.d(TAG, "gray1");
         // 縮小
         image = inputFrame.rgba();
         Imgproc.resize(image, image_small, image_small.size(), 0, 0, Imgproc.INTER_NEAREST);
 
-        Log.d(TAG, "gray2");
         // グレースケール
-        Mat gray = new Mat(image_small.rows(), image_small.cols(), CvType.CV_8UC1);
-        Imgproc.cvtColor(image_small, gray, Imgproc.COLOR_RGB2GRAY);
+        //Mat gray = new Mat(image_small.rows(), image_small.cols(), CvType.CV_8UC1);
+        //Imgproc.cvtColor(image_small, gray, Imgproc.COLOR_RGB2GRAY);
+
+        List<Mat> list= new ArrayList<>();
+        Core.split(image_small, list);
+        list.remove(0);
+        Core.merge(list, image_small);
 
         // 閾値
-        //Imgproc.threshold(gray, gray, 128.0, 255.0, Imgproc.THRESH_BINARY);
-        Log.d(TAG, "gray3");
-        return gray;
-    }
-    /*
+        Imgproc.threshold(image_small, image_small, 128.0, 255.0, Imgproc.THRESH_BINARY);
+        Imgproc.cvtColor(image_small, image_small, Imgproc.COLOR_RGB2GRAY);
+
+        //List<Mat> list2= new ArrayList<>();
+        //Core.split(image, list2);
+        //list.remove(0);
+        //Core.merge(list2, image);
+
+        // 閾値
+        //Imgproc.threshold(image, image, 128.0, 255.0, Imgproc.THRESH_BINARY);
+        //Imgproc.cvtColor(image, image, Imgproc.COLOR_RGB2GRAY);
 
         int count = 0;
         int blackCount = 0;
         int whiteCount = 0;
         int redCount = 0;
         int darkRedCount = 0;
+        int lightRedCount = 0;
         int greenCount = 0;
         int blueCount = 0;
         Size size = image.size();
@@ -165,7 +193,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
                     if (data[0] > 224 && data[0] > data[1] && data[0] > data[2]) redCount++;
 
-                    if (data[0] > 32 && data[0] > data[1]*2 && data[0] > data[2]*2) darkRedCount++;
+                    if (data[0] < 128 && data[1]*5 < data[0] && data[2]*5 < data[0]) darkRedCount++;
+                    if (data[0] > 128 && data[1] < 16 && data[2] < 16) lightRedCount++;
+                    if (data[0] > 128 && data[1] < 16 && data[2] < 16) lightRedCount++;
 
                     if (buttonPressed) {
                         fingerColor[0] += data[0];
@@ -186,6 +216,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             Log.d(TAG, "finger is " + fingerColor[0] + " " + fingerColor[1] + " " + fingerColor[2]);
             Log.d(TAG, "red is " + redCount);
             Log.d(TAG, "dark red is " + darkRedCount);
+            Log.d(TAG, "light red is " + lightRedCount);
             Log.d(TAG, "white is " + whiteCount);
             Log.d(TAG, "black is " + blackCount);
             Log.d(TAG, "count is " + count);
@@ -197,26 +228,20 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         if (
                 redCount > 0.4 * count ||
                 (whiteCount > 0.5 * count && redCount > 0.2 * count) ||
-                (darkRedCount > 0.5 * count)
+                (darkRedCount > 0.3 * count)
                 )
         {
 
-            // 閾値
-            Imgproc.threshold(gray, gray, 128.0, 255.0,
-                    Imgproc.THRESH_BINARY);
-            //Imgproc.threshold(inputFrame.gray(), image, 128.0, 255.0,
-            //        Imgproc.THRESH_BINARY);
-
             // 特徴点抽出
             MatOfPoint features = new MatOfPoint();
-            Imgproc.goodFeaturesToTrack(gray, features, 30, 0.01, 10);
+            Imgproc.goodFeaturesToTrack(image_small, features, 30, 0.01, 20);
 
             // 特徴点が見つかった
             if (features.total() > 0) {
                 // 過去のデータが存在する
                 if (pts_prev.total() > 0) {
                     // 現在のデータ
-                    gray.copyTo(image_next);
+                    image_small.copyTo(image_next);
                     pts_next = new MatOfPoint2f(features.toArray());
 
                     // オプティカルフロー算出
@@ -258,7 +283,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 }
 
                 // 過去のデータ
-                gray.copyTo(image_prev);
+                image_small.copyTo(image_prev);
                 pts_prev = new MatOfPoint2f(features.toArray());
             }
 
@@ -291,8 +316,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         webView.scrollBy((int) (scrollHorizontal * scale), (int) (scrollVertical * scale));
         //Log.d(TAG, "scroll = " + scrollVertical + " " + scrollHorizontal);
 
-        return gray;
-    }*/
+        return image;
+    }
 /*
     private static class OpenCVLoaderCallback extends BaseLoaderCallback {
         private final CameraBridgeViewBase mCameraView;
@@ -354,7 +379,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         }
 
         if (id == R.id.action_settings) {
-
+            Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
+            startActivity(intent);
         }
 
         return super.onOptionsItemSelected(item);

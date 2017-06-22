@@ -1,17 +1,21 @@
 package jp.ac.titech.itpro.sdl.scrollbycamera;
 
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.View;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.TextView;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
+import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
@@ -35,14 +39,14 @@ public class SettingsActivity extends Activity implements CameraBridgeViewBase.C
 
     String TAG = "SettingsActivity";
 
-    WebView webView;
-    int scrollVertical = 0;
-    int scrollHorizontal = 0;
     float alpha, threshold, scale;
+
+    boolean isDown = true;
+    List<Float> vlist = new ArrayList<>();
+    List<Float> hlist = new ArrayList<>();
 
     boolean buttonPressed = false;
     double[] fingerColor = new double[3];
-    TextView textView;
 
     CameraBridgeViewBase mCameraView;
 
@@ -59,11 +63,13 @@ public class SettingsActivity extends Activity implements CameraBridgeViewBase.C
         public void onManagerConnected(int status) {
             switch (status) {
                 case LoaderCallbackInterface.SUCCESS:
+                    Log.d(TAG, "callback SUCCESS");
                     mCameraView.enableView();
                     pts_prev = new MatOfPoint2f();
                     pts_next = new MatOfPoint2f();
                     break;
                 default:
+                    Log.d(TAG, "callback DEFAULT");
                     super.onManagerConnected(status);
                     break;
             }
@@ -71,29 +77,62 @@ public class SettingsActivity extends Activity implements CameraBridgeViewBase.C
     };
 
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_settings);
+        setContentView(R.layout.activity_main);
+
+        Log.d(TAG, "onCreate");
 
         TypedValue outValue = new TypedValue();
         getResources().getValue(R.dimen.alpha, outValue, true);
         alpha = outValue.getFloat();
+        outValue = new TypedValue();
         getResources().getValue(R.dimen.threshold, outValue, true);
         threshold = outValue.getFloat();
+        outValue = new TypedValue();
         getResources().getValue(R.dimen.scale, outValue, true);
         scale = outValue.getFloat();
         Log.d(TAG, "alpha = " + alpha);
 
-
-        textView = (TextView) findViewById(R.id.textView);
-
         mCameraView = (CameraBridgeViewBase) findViewById(R.id.camera_view);
         mCameraView.setCvCameraViewListener(this);
-    }
+        //mCameraView.setVisibility(View.GONE);
 
+        findViewById(R.id.button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                buttonPressed = true;
+            }
+        });
+        findViewById(R.id.downButton).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                isDown = true;
+            }
+        });
+        findViewById(R.id.upButton).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                isDown = false;
+            }
+        });
+        findViewById(R.id.finishButton).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
+        findViewById(R.id.saveButton).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                saveSettings();
+            }
+        });
+    }
 
     @Override
     public void onCameraViewStarted(int width, int height) {
+        Log.d(TAG, "onCameraViewStarted");
         image = new Mat(height, width, CvType.CV_8UC3);
         image_small = new Mat(height/8, width/8, CvType.CV_8UC3);
         image_prev = new Mat(image_small.rows(), image_small.cols(), image_small.type());
@@ -120,35 +159,59 @@ public class SettingsActivity extends Activity implements CameraBridgeViewBase.C
         Imgproc.resize(image, image_small, image_small.size(), 0, 0, Imgproc.INTER_NEAREST);
 
         // グレースケール
-        Mat gray = new Mat(image_small.rows(), image_small.cols(), CvType.CV_8UC1);
-        Imgproc.cvtColor(image_small, gray, Imgproc.COLOR_RGB2GRAY);
+        //Mat gray = new Mat(image_small.rows(), image_small.cols(), CvType.CV_8UC1);
+        //Imgproc.cvtColor(image_small, gray, Imgproc.COLOR_RGB2GRAY);
+
+        List<Mat> list= new ArrayList<>();
+        Core.split(image_small, list);
+        list.remove(0);
+        Core.merge(list, image_small);
 
         // 閾値
-        //Imgproc.threshold(gray, gray, 20.0, 255.0,
-        //        Imgproc.THRESH_BINARY);
-        //Imgproc.threshold(inputFrame.gray(), image, 20.0, 255.0,
-        //        Imgproc.THRESH_BINARY);
+        Imgproc.threshold(image_small, image_small, 128.0, 255.0, Imgproc.THRESH_BINARY);
+        Imgproc.cvtColor(image_small, image_small, Imgproc.COLOR_RGB2GRAY);
 
+        //List<Mat> list2= new ArrayList<>();
+        //Core.split(image, list2);
+        //list.remove(0);
+        //Core.merge(list2, image);
+
+        // 閾値
+        //Imgproc.threshold(image, image, 128.0, 255.0, Imgproc.THRESH_BINARY);
+        //Imgproc.cvtColor(image, image, Imgproc.COLOR_RGB2GRAY);
+
+        int count = 0;
         int blackCount = 0;
         int whiteCount = 0;
         int redCount = 0;
+        int darkRedCount = 0;
+        int lightRedCount = 0;
         int greenCount = 0;
         int blueCount = 0;
         Size size = image.size();
         int rough = 100;
         for (int i = 0; i < size.height / rough; i++) {
             for (int j = 0; j < size.width / rough; j++) {
+                count++;
                 double[] data = image.get(i * rough, j * rough);
-                if (data[0] > 240 && data[1] > 240 && data[2] > 240) whiteCount++;
-                else blackCount++;
+                if (data.length >= 3) {
+                    if (data[0] > 250 && data[1] > 250 && data[2] > 250) whiteCount++;
+                    if (data[0] + data[1] + data[2] < 40*3)blackCount++;
 
-                if (data[1] < 32 && data[2] < 32) redCount++;
+                    if (data[0] > 224 && data[0] > data[1] && data[0] > data[2]) redCount++;
 
-                if (buttonPressed) {
-                    fingerColor[0] += data[0];
-                    fingerColor[1] += data[1];
-                    fingerColor[2] += data[2];
-                    Log.d(TAG, "color is " + data[0] + " " + data[1] + " " + data[2]);
+                    if (data[0] < 128 && data[1]*5 < data[0] && data[2]*5 < data[0]) darkRedCount++;
+                    if (data[0] > 128 && data[1] < 16 && data[2] < 16) lightRedCount++;
+                    if (data[0] > 128 && data[1] < 16 && data[2] < 16) lightRedCount++;
+
+                    if (buttonPressed) {
+                        fingerColor[0] += data[0];
+                        fingerColor[1] += data[1];
+                        fingerColor[2] += data[2];
+                        Log.d(TAG, "color is " + data[0] + " " + data[1] + " " + data[2]);
+                    }
+                } else {
+                    blackCount++;
                 }
             }
         }
@@ -158,26 +221,34 @@ public class SettingsActivity extends Activity implements CameraBridgeViewBase.C
             fingerColor[1] /= (whiteCount + blackCount);
             fingerColor[2] /= (whiteCount + blackCount);
             Log.d(TAG, "finger is " + fingerColor[0] + " " + fingerColor[1] + " " + fingerColor[2]);
+            Log.d(TAG, "red is " + redCount);
+            Log.d(TAG, "dark red is " + darkRedCount);
+            Log.d(TAG, "light red is " + lightRedCount);
+            Log.d(TAG, "white is " + whiteCount);
+            Log.d(TAG, "black is " + blackCount);
+            Log.d(TAG, "count is " + count);
             buttonPressed = false;
         }
 
         //Log.d(TAG, "white / (white+black) = " +  whiteCount/(double)(whiteCount+blackCount));
 
-        if (redCount < 0.5 * (whiteCount + blackCount) && whiteCount < 0.7 * (whiteCount + blackCount) ) {
-            scrollVertical = (int) (alpha * scrollVertical);
-            scrollHorizontal = (int) (alpha * scrollHorizontal);
-        } else {
+        if (
+                redCount > 0.4 * count ||
+                        (whiteCount > 0.5 * count && redCount > 0.2 * count) ||
+                        (darkRedCount > 0.3 * count)
+                )
+        {
 
             // 特徴点抽出
             MatOfPoint features = new MatOfPoint();
-            Imgproc.goodFeaturesToTrack(gray, features, 10, 0.01, 10);
+            Imgproc.goodFeaturesToTrack(image_small, features, 30, 0.01, 20);
 
             // 特徴点が見つかった
             if (features.total() > 0) {
                 // 過去のデータが存在する
                 if (pts_prev.total() > 0) {
                     // 現在のデータ
-                    gray.copyTo(image_next);
+                    image_small.copyTo(image_next);
                     pts_next = new MatOfPoint2f(features.toArray());
 
                     // オプティカルフロー算出
@@ -219,7 +290,7 @@ public class SettingsActivity extends Activity implements CameraBridgeViewBase.C
                 }
 
                 // 過去のデータ
-                gray.copyTo(image_prev);
+                image_small.copyTo(image_prev);
                 pts_prev = new MatOfPoint2f(features.toArray());
             }
 
@@ -231,19 +302,20 @@ public class SettingsActivity extends Activity implements CameraBridgeViewBase.C
             for (double d : horizontalDiff) {
                 horizontalAverage += d / horizontalDiff.size();
             }
-            verticalAverage *= 5;
-            horizontalAverage *= 5;
+            //verticalAverage *= 5;
+            //horizontalAverage *= 5;
             //Log.d(TAG, "average is " + average);
-            scrollVertical = (int) (alpha * scrollVertical + (1 - alpha) * ((int) verticalAverage));
-            scrollHorizontal = (int) (alpha * scrollHorizontal + (1 - alpha) * ((int) horizontalAverage));
-            Log.d(TAG, "update scroll value");
+            hlist.add((float)horizontalAverage);
+            vlist.add((float)verticalAverage);
+            Log.d(TAG, "add scroll value: " + horizontalAverage + " " + verticalAverage);
+        } else {
+            pts_prev = new MatOfPoint2f();
         }
 
         if (buttonPressed) {
             fingerColor[0] = fingerColor[1] = fingerColor[2] = 0;
         }
 
-        webView.scrollBy((int) (scrollVertical * scale), (int) (scrollHorizontal * scale));
         //Log.d(TAG, "scroll = " + scrollVertical + " " + scrollHorizontal);
 
         return image;
@@ -279,5 +351,31 @@ public class SettingsActivity extends Activity implements CameraBridgeViewBase.C
     public void onPause() {
         super.onPause();
         if (mCameraView != null) mCameraView.disableView();
+    }
+
+
+    void saveSettings() {
+        Float x = 0f;
+        for (float e: hlist) {
+            x += e;
+        }
+        x /= hlist.size();
+        Float y = 0f;
+        for (float e: hlist) {
+            y += e;
+        }
+        y /= hlist.size();
+        SharedPreferences pref = getPreferences(MODE_PRIVATE);
+        SharedPreferences.Editor e = pref.edit();
+        if (isDown) {
+            e.putString(getString(R.string.key_x1), x.toString());
+            e.putString(getString(R.string.key_y1), y.toString());
+        } else {
+            e.putString(getString(R.string.key_x2), x.toString());
+            e.putString(getString(R.string.key_y2), y.toString());
+        }
+        e.apply();
+        hlist.clear();
+        vlist.clear();
     }
 }
