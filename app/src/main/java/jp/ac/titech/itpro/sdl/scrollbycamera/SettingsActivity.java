@@ -1,14 +1,12 @@
 package jp.ac.titech.itpro.sdl.scrollbycamera;
 
-import android.support.v7.app.AppCompatActivity;
+import android.app.Activity;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.util.Log;
 import android.util.TypedValue;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;
+import android.widget.TextView;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
@@ -29,21 +27,22 @@ import org.opencv.video.Video;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Created by onuki on 2017/06/20.
+ */
 
-public class MainActivity extends AppCompatActivity implements CameraBridgeViewBase.CvCameraViewListener2 {
+public class SettingsActivity extends Activity implements CameraBridgeViewBase.CvCameraViewListener2 {
 
-    String TAG = "MainActivity";
+    String TAG = "SettingsActivity";
 
     WebView webView;
     int scrollVertical = 0;
     int scrollHorizontal = 0;
     float alpha, threshold, scale;
 
-    Vector2D vvector = new Vector2D(0, 1);
-    Vector2D hvector = new Vector2D(1, 0);
-
     boolean buttonPressed = false;
     double[] fingerColor = new double[3];
+    TextView textView;
 
     CameraBridgeViewBase mCameraView;
 
@@ -72,9 +71,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     };
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_settings);
 
         TypedValue outValue = new TypedValue();
         getResources().getValue(R.dimen.alpha, outValue, true);
@@ -85,26 +84,13 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         scale = outValue.getFloat();
         Log.d(TAG, "alpha = " + alpha);
 
-        webView = (WebView) findViewById(R.id.web_view);
-        //リンクをタップしたときに標準ブラウザを起動させない
-        webView.setWebViewClient(new WebViewClient());
 
-        //最初にYahoo! Japanのページを表示する。
-        webView.loadUrl("http://www.yahoo.co.jp/");
-        webView.getSettings().setBuiltInZoomControls(true);
-        webView.getSettings().setJavaScriptEnabled(true);
+        textView = (TextView) findViewById(R.id.textView);
 
         mCameraView = (CameraBridgeViewBase) findViewById(R.id.camera_view);
         mCameraView.setCvCameraViewListener(this);
-        //mCameraView.setVisibility(View.GONE);
-
-        findViewById(R.id.button).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                buttonPressed = true;
-            }
-        });
     }
+
 
     @Override
     public void onCameraViewStarted(int width, int height) {
@@ -129,52 +115,40 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         ArrayList<Double> verticalDiff = new ArrayList<>();
         ArrayList<Double> horizontalDiff = new ArrayList<>();
 
-        Log.d(TAG, "gray1");
         // 縮小
         image = inputFrame.rgba();
         Imgproc.resize(image, image_small, image_small.size(), 0, 0, Imgproc.INTER_NEAREST);
 
-        Log.d(TAG, "gray2");
         // グレースケール
         Mat gray = new Mat(image_small.rows(), image_small.cols(), CvType.CV_8UC1);
         Imgproc.cvtColor(image_small, gray, Imgproc.COLOR_RGB2GRAY);
 
         // 閾値
-        //Imgproc.threshold(gray, gray, 128.0, 255.0, Imgproc.THRESH_BINARY);
-        Log.d(TAG, "gray3");
-        return gray;
-    }
-    /*
+        //Imgproc.threshold(gray, gray, 20.0, 255.0,
+        //        Imgproc.THRESH_BINARY);
+        //Imgproc.threshold(inputFrame.gray(), image, 20.0, 255.0,
+        //        Imgproc.THRESH_BINARY);
 
-        int count = 0;
         int blackCount = 0;
         int whiteCount = 0;
         int redCount = 0;
-        int darkRedCount = 0;
         int greenCount = 0;
         int blueCount = 0;
         Size size = image.size();
         int rough = 100;
         for (int i = 0; i < size.height / rough; i++) {
             for (int j = 0; j < size.width / rough; j++) {
-                count++;
                 double[] data = image.get(i * rough, j * rough);
-                if (data.length >= 3) {
-                    if (data[0] > 250 && data[1] > 250 && data[2] > 250) whiteCount++;
-                    if (data[0] + data[1] + data[2] < 40*3)blackCount++;
+                if (data[0] > 240 && data[1] > 240 && data[2] > 240) whiteCount++;
+                else blackCount++;
 
-                    if (data[0] > 224 && data[0] > data[1] && data[0] > data[2]) redCount++;
+                if (data[1] < 32 && data[2] < 32) redCount++;
 
-                    if (data[0] > 32 && data[0] > data[1]*2 && data[0] > data[2]*2) darkRedCount++;
-
-                    if (buttonPressed) {
-                        fingerColor[0] += data[0];
-                        fingerColor[1] += data[1];
-                        fingerColor[2] += data[2];
-                        Log.d(TAG, "color is " + data[0] + " " + data[1] + " " + data[2]);
-                    }
-                } else {
-                    blackCount++;
+                if (buttonPressed) {
+                    fingerColor[0] += data[0];
+                    fingerColor[1] += data[1];
+                    fingerColor[2] += data[2];
+                    Log.d(TAG, "color is " + data[0] + " " + data[1] + " " + data[2]);
                 }
             }
         }
@@ -184,32 +158,19 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             fingerColor[1] /= (whiteCount + blackCount);
             fingerColor[2] /= (whiteCount + blackCount);
             Log.d(TAG, "finger is " + fingerColor[0] + " " + fingerColor[1] + " " + fingerColor[2]);
-            Log.d(TAG, "red is " + redCount);
-            Log.d(TAG, "dark red is " + darkRedCount);
-            Log.d(TAG, "white is " + whiteCount);
-            Log.d(TAG, "black is " + blackCount);
-            Log.d(TAG, "count is " + count);
             buttonPressed = false;
         }
 
         //Log.d(TAG, "white / (white+black) = " +  whiteCount/(double)(whiteCount+blackCount));
 
-        if (
-                redCount > 0.4 * count ||
-                (whiteCount > 0.5 * count && redCount > 0.2 * count) ||
-                (darkRedCount > 0.5 * count)
-                )
-        {
-
-            // 閾値
-            Imgproc.threshold(gray, gray, 128.0, 255.0,
-                    Imgproc.THRESH_BINARY);
-            //Imgproc.threshold(inputFrame.gray(), image, 128.0, 255.0,
-            //        Imgproc.THRESH_BINARY);
+        if (redCount < 0.5 * (whiteCount + blackCount) && whiteCount < 0.7 * (whiteCount + blackCount) ) {
+            scrollVertical = (int) (alpha * scrollVertical);
+            scrollHorizontal = (int) (alpha * scrollHorizontal);
+        } else {
 
             // 特徴点抽出
             MatOfPoint features = new MatOfPoint();
-            Imgproc.goodFeaturesToTrack(gray, features, 30, 0.01, 10);
+            Imgproc.goodFeaturesToTrack(gray, features, 10, 0.01, 10);
 
             // 特徴点が見つかった
             if (features.total() > 0) {
@@ -270,50 +231,44 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             for (double d : horizontalDiff) {
                 horizontalAverage += d / horizontalDiff.size();
             }
-            //verticalAverage *= 5;
-            //horizontalAverage *= 5;
+            verticalAverage *= 5;
+            horizontalAverage *= 5;
             //Log.d(TAG, "average is " + average);
-            Vector2D v = new Vector2D(horizontalAverage, verticalAverage);
-            double[] comp = Vector2D.decompose(v, hvector, vvector);
-            scrollHorizontal = (int) (alpha * scrollHorizontal + (1 - alpha) * ((int) comp[0]));
-            scrollVertical = (int) (alpha * scrollVertical + (1 - alpha) * ((int) comp[1]));
-            Log.d(TAG, "update scroll value " + horizontalAverage + " " + verticalAverage + " " + comp[0] + " " + comp[1]);
-        } else {
-            scrollVertical = (int) (alpha * scrollVertical);
-            scrollHorizontal = (int) (alpha * scrollHorizontal);
-            pts_prev = new MatOfPoint2f();
+            scrollVertical = (int) (alpha * scrollVertical + (1 - alpha) * ((int) verticalAverage));
+            scrollHorizontal = (int) (alpha * scrollHorizontal + (1 - alpha) * ((int) horizontalAverage));
+            Log.d(TAG, "update scroll value");
         }
 
         if (buttonPressed) {
             fingerColor[0] = fingerColor[1] = fingerColor[2] = 0;
         }
 
-        webView.scrollBy((int) (scrollHorizontal * scale), (int) (scrollVertical * scale));
+        webView.scrollBy((int) (scrollVertical * scale), (int) (scrollHorizontal * scale));
         //Log.d(TAG, "scroll = " + scrollVertical + " " + scrollHorizontal);
 
-        return gray;
-    }*/
-/*
-    private static class OpenCVLoaderCallback extends BaseLoaderCallback {
-        private final CameraBridgeViewBase mCameraView;
-        private OpenCVLoaderCallback(Context context, CameraBridgeViewBase cameraView) {
-            super(context);
-            mCameraView = cameraView;
-        }
+        return image;
+    }
+    /*
+        private static class OpenCVLoaderCallback extends BaseLoaderCallback {
+            private final CameraBridgeViewBase mCameraView;
+            private OpenCVLoaderCallback(Context context, CameraBridgeViewBase cameraView) {
+                super(context);
+                mCameraView = cameraView;
+            }
 
-        @Override
-        public void onManagerConnected(int status) {
-            switch (status) {
-                case LoaderCallbackInterface.SUCCESS:
-                    mCameraView.enableView();
-                    break;
-                default:
-                    super.onManagerConnected(status);
-                    break;
+            @Override
+            public void onManagerConnected(int status) {
+                switch (status) {
+                    case LoaderCallbackInterface.SUCCESS:
+                        mCameraView.enableView();
+                        break;
+                    default:
+                        super.onManagerConnected(status);
+                        break;
+                }
             }
         }
-    }
-*/
+    */
     @Override
     public void onResume() {
         super.onResume();
@@ -324,39 +279,5 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     public void onPause() {
         super.onPause();
         if (mCameraView != null) mCameraView.disableView();
-    }
-
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_camera) {
-            if (webView.getVisibility() == View.VISIBLE) {
-                webView.setVisibility(View.GONE);
-                //mCameraView.setVisibility(View.VISIBLE);
-            } else {
-                webView.setVisibility(View.VISIBLE);
-                //mCameraView.setVisibility(View.GONE);
-            }
-            return true;
-        }
-
-        if (id == R.id.action_settings) {
-
-        }
-
-        return super.onOptionsItemSelected(item);
     }
 }
