@@ -57,11 +57,13 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         public void onManagerConnected(int status) {
             switch (status) {
                 case LoaderCallbackInterface.SUCCESS:
+                    Log.d(TAG, "callback SUCCESS");
                     mCameraView.enableView();
                     pts_prev = new MatOfPoint2f();
                     pts_next = new MatOfPoint2f();
                     break;
                 default:
+                    Log.d(TAG, "callback DEFAULT");
                     super.onManagerConnected(status);
                     break;
             }
@@ -82,6 +84,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         webView.getSettings().setBuiltInZoomControls(true);
         webView.getSettings().setJavaScriptEnabled(true);
 
+        Log.d(TAG, "onCreate");
         mCameraView = (CameraBridgeViewBase) findViewById(R.id.camera_view);
         mCameraView.setCvCameraViewListener(this);
         //mCameraView.setVisibility(View.GONE);
@@ -89,6 +92,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     @Override
     public void onCameraViewStarted(int width, int height) {
+        Log.d(TAG, "onCameraViewStarted");
         image = new Mat(height, width, CvType.CV_8UC3);
         image_small = new Mat(height/8, width/8, CvType.CV_8UC3);
         image_prev = new Mat(image_small.rows(), image_small.cols(), image_small.type());
