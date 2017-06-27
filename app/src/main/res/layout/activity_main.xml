@@ -10,6 +10,7 @@
         android:id="@+id/camera_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        app:show_fps="true"
         />
 
     <WebView
@@ -22,6 +23,7 @@
         android:id="@+id/button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="button"/>
+        android:text="button"
+        android:visibility="invisible"/>
 
 </android.support.constraint.ConstraintLayout>

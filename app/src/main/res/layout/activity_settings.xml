@@ -38,9 +38,7 @@
     <org.opencv.android.JavaCameraView
         android:id="@+id/settingCameraView"
         android:layout_width="fill_parent"
-        android:layout_height="0dp"
-        android:visibility="invisible"
-        opencv:camera_id="any"
+        android:layout_height="fill_parent"
         opencv:show_fps="false" />
 
 </LinearLayout>

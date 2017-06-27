@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <item name="alpha" format="float" type="dimen">0.9</item>
-    <item name="threshold" format="float" type="dimen">10</item>
-    <item name="scale" format="float" type="dimen">2</item>
+    <item name="alpha" format="float" type="dimen">0.7</item>
+    <item name="threshold" format="float" type="dimen">5</item>
+    <item name="scale" format="float" type="dimen">1</item>
+
+    <integer name="request">1000</integer>
+    <integer name="result">100</integer>
 
 </resources>
