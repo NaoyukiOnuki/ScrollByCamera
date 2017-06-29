@@ -126,6 +126,7 @@ class MotionDetector {
         }
 
         Imgproc.resize(image_small, image1, image1.size(), 0, 0, Imgproc.INTER_NEAREST);
+        Imgproc.resize(rect, image2, image2.size(), 0, 0, Imgproc.INTER_NEAREST);
 
         Motion motion;
         switch (select) {
