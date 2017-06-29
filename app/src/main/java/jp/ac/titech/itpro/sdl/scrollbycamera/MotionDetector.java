@@ -95,7 +95,7 @@ class MotionDetector {
         // 矩形を検出
         List<MatOfPoint> contours = new ArrayList<>();
         Mat hierarchy = new Mat(image_small.rows(), image_small.cols(), CvType.CV_8UC1);
-        Imgproc.findContours(image_small, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_TC89_L1);
+        Imgproc.findContours(image_small.clone(), contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_TC89_L1);
 
         // 一定以上の大きさの矩形があるかどうか
         boolean exist = false;
@@ -111,7 +111,7 @@ class MotionDetector {
         // 一定以上の大きさの矩形があれば
         if (exist) {
             MatOfPoint max_contour = contours.get(index);
-            Moments mu = Imgproc.moments(max_contour, false);
+            Moments mu = MyImgproc.contourMoments(max_contour);
             // 矩形の重心p
             Point p = new Point(mu.get_m10()/mu.get_m00(), mu.get_m01()/mu.get_m00());
             if (point_prev != null) {
