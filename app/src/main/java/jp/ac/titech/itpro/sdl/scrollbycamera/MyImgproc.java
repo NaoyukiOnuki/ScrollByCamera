@@ -8,7 +8,9 @@ import org.opencv.imgproc.Moments;
  * Created by onuki on 2017/06/27.
  */
 
-public class MyImgproc {
+class MyImgproc {
+    final private static String TAG = "MyImgproc";
+
     public static Moments contourMoments(MatOfPoint contour )
     {
         Moments m = new Moments();

@@ -14,24 +14,10 @@ import android.webkit.WebViewClient;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
-import org.opencv.android.JavaCameraView;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
-import org.opencv.core.Core;
-import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfByte;
-import org.opencv.core.MatOfFloat;
-import org.opencv.core.MatOfPoint;
-import org.opencv.core.MatOfPoint2f;
-import org.opencv.core.Point;
-import org.opencv.core.Scalar;
-import org.opencv.core.Size;
-import org.opencv.imgproc.Imgproc;
-import org.opencv.video.Video;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -89,7 +75,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         outValue = new TypedValue();
         getResources().getValue(R.dimen.scale, outValue, true);
         scale = outValue.getFloat();
-        Log.d(TAG, "alpha = " + alpha);
 
         SharedPreferences pref = getPreferences(MODE_PRIVATE);
         float x1 = pref.getFloat(getString(R.string.key_x1), 1);
@@ -127,6 +112,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 webView.scrollBy((int) (scrollHorizontal * scale), (int) (scrollVertical * scale));
             }
         }, 10, 10);
+
+
     }
 
     @Override
@@ -142,61 +129,27 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         //Log.d(TAG, "onCameraFrame");
-        //Mat mat = new Mat();
-        //Imgproc.threshold(inputFrame.gray(), mat, 20.0, 255.0,
-        //        Imgproc.THRESH_BINARY);
-        //return mat;
-
-        /*
-        image = inputFrame.rgba();
-        Imgproc.cvtColor(image, image, Imgproc.COLOR_RGB2HSV);
-        Core.inRange(image, new Scalar(0, 0, 0), new Scalar(25, 255, 255), image);
-        Imgproc.cvtColor(image, image, Imgproc.COLOR_GRAY2RGB);
-*/
 
         MotionDetector.Motion motion = detector.onCameraFrame(inputFrame.rgba());
         Vector2D v = new Vector2D(motion.x * scale, motion.y * scale);
         double[] comp = Vector2D.decompose(v, hvector, vvector);
+        float a = 0.4f;
         if (comp[0] == 0) {
             scrollHorizontal = (int) (alpha * scrollHorizontal);
         } else {
-            scrollHorizontal = (int) comp[0];
+            scrollHorizontal = (int) (a * scrollHorizontal + (1-a) * comp[0]);
         }
         if (comp[1] == 0) {
             scrollVertical = (int) (alpha * scrollVertical);
         } else {
-            scrollVertical = (int) comp[1];
+            scrollVertical = (int) (a * scrollVertical + (1-a) * comp[1]);
         }
         //scrollVertical = (int) (alpha * scrollVertical + (1 - alpha) * comp[1]);
         //Log.d(TAG, "update scroll value " + horizontalAverage + " " + verticalAverage + " " + comp[0] + " " + comp[1]);
 
-
-        //webView.scrollBy((int) (scrollHorizontal * scale), (int) (scrollVertical * scale));
-        //Log.d(TAG, "scroll = " + scrollVertical + " " + scrollHorizontal);
-
         return motion.image;
     }
-/*
-    private static class OpenCVLoaderCallback extends BaseLoaderCallback {
-        private final CameraBridgeViewBase mCameraView;
-        private OpenCVLoaderCallback(Context context, CameraBridgeViewBase cameraView) {
-            super(context);
-            mCameraView = cameraView;
-        }
 
-        @Override
-        public void onManagerConnected(int status) {
-            switch (status) {
-                case LoaderCallbackInterface.SUCCESS:
-                    mCameraView.enableView();
-                    break;
-                default:
-                    super.onManagerConnected(status);
-                    break;
-            }
-        }
-    }
-*/
     @Override
     public void onResume() {
         super.onResume();
@@ -225,20 +178,29 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_camera) {
-            if (webView.getVisibility() == View.VISIBLE) {
-                webView.setVisibility(View.GONE);
-                //mCameraView.setVisibility(View.VISIBLE);
-            } else {
-                webView.setVisibility(View.VISIBLE);
-                //mCameraView.setVisibility(View.GONE);
-            }
-            return true;
-        }
-
-        if (id == R.id.action_settings) {
-            Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
-            startActivityForResult(intent, REQUEST_SUB);
+        switch (id) {
+            case R.id.action_camera:
+                if (webView.getVisibility() == View.VISIBLE) {
+                    webView.setVisibility(View.GONE);
+                    //mCameraView.setVisibility(View.VISIBLE);
+                } else {
+                    webView.setVisibility(View.VISIBLE);
+                    //mCameraView.setVisibility(View.GONE);
+                }
+                return true;
+            case R.id.action_settings:
+                Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
+                startActivityForResult(intent, REQUEST_SUB);
+                break;
+            case R.id.action_1:
+                detector.select = 1;
+                break;
+            case R.id.action_2:
+                detector.select = 2;
+                break;
+            case R.id.action_3:
+                detector.select = 3;
+                break;
         }
 
         return super.onOptionsItemSelected(item);
