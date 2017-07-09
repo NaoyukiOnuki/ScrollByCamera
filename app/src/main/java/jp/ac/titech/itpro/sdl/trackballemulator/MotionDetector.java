@@ -1,4 +1,4 @@
-package jp.ac.titech.itpro.sdl.scrollbycamera;
+package jp.ac.titech.itpro.sdl.trackballemulator;
 
 import android.util.Log;
 
@@ -6,7 +6,6 @@ import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
-import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
@@ -40,7 +39,7 @@ class MotionDetector {
 
     private float threshold;
 
-    private Mat image_small, high_image, low_image;
+    private Mat image_small, high_image, low_image, dark_image;
     private Mat rect;
     private Mat image1, image2, image3;
 
@@ -50,6 +49,7 @@ class MotionDetector {
         image_small = new Mat(height/8, width/8, CvType.CV_8UC3);
         high_image = new Mat(height/8, width/8, CvType.CV_8UC1);
         low_image = new Mat(height/8, width/8, CvType.CV_8UC1);
+        dark_image = new Mat(height/8, width/8, CvType.CV_8UC1);
 
         rect = new Mat(height/8, width/8, CvType.CV_8UC3);
 
@@ -57,6 +57,11 @@ class MotionDetector {
         image2 = new Mat(height, width, CvType.CV_8UC3);
         image3 = new Mat(height, width, CvType.CV_8UC3);
 
+        this.threshold = threshold;
+
+    }
+
+    void setThreshold(float threshold) {
         this.threshold = threshold;
     }
 
@@ -87,10 +92,13 @@ class MotionDetector {
         }
 
         // lowとhighの2つの範囲を取って
-        Core.inRange(image_small, new Scalar(0, 224, 0), new Scalar(4, 255, 255), low_image);
-        Core.inRange(image_small, new Scalar(176, 224, 0), new Scalar(180, 255, 255), high_image);
+        Core.inRange(image_small, new Scalar(0, 0, 0), new Scalar(4, 255, 140), low_image);
+        Core.inRange(image_small, new Scalar(176, 0, 0), new Scalar(180, 255, 140), high_image);
+        Core.inRange(image_small, new Scalar(0, 0, 0), new Scalar(180, 255, 8), dark_image);
         // orで合成
+        //Core.bitwise_or(low_high_image, high_high_image, high_high_image);
         Core.bitwise_or(low_image, high_image, image_small);
+        Core.bitwise_or(image_small, dark_image, image_small);
 
         // 矩形を検出
         List<MatOfPoint> contours = new ArrayList<>();
@@ -104,7 +112,7 @@ class MotionDetector {
         //Log.d(TAG, "contour size is " + contours.size());
         while (!exist && index < contours.size()) {
             double area = Imgproc.contourArea(contours.get(index), false);
-            if (area * 8 > max_area) exist = true;
+            if (area * 4 > max_area) exist = true;
             else index++;
         }
 

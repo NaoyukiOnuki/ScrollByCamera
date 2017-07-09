@@ -1,4 +1,4 @@
-package jp.ac.titech.itpro.sdl.scrollbycamera;
+package jp.ac.titech.itpro.sdl.trackballemulator;
 
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;

@@ -1,33 +1,18 @@
-package jp.ac.titech.itpro.sdl.scrollbycamera;
+package jp.ac.titech.itpro.sdl.trackballemulator;
 
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
-import android.widget.TextView;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
-import org.opencv.core.Core;
-import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfByte;
-import org.opencv.core.MatOfFloat;
-import org.opencv.core.MatOfPoint;
-import org.opencv.core.MatOfPoint2f;
-import org.opencv.core.Point;
-import org.opencv.core.Scalar;
-import org.opencv.core.Size;
-import org.opencv.imgproc.Imgproc;
-import org.opencv.video.Video;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,9 +21,9 @@ import java.util.List;
  * Created by onuki on 2017/06/20.
  */
 
-public class SettingsActivity extends Activity implements CameraBridgeViewBase.CvCameraViewListener2 {
+public class CameraSettingsActivity extends Activity implements CameraBridgeViewBase.CvCameraViewListener2 {
 
-    String TAG = "SettingsActivity";
+    String TAG = "CameraSettingsActivity";
     final int REQUEST_SUB = 1000;
     final int RESULT_SUB = 100;
     Intent intent;
@@ -73,7 +58,7 @@ public class SettingsActivity extends Activity implements CameraBridgeViewBase.C
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_settings);
+        setContentView(R.layout.activity_camera_settings);
 
         Log.d(TAG, "onCreate");
 
@@ -88,7 +73,7 @@ public class SettingsActivity extends Activity implements CameraBridgeViewBase.C
         outValue = new TypedValue();
         getResources().getValue(R.dimen.scale, outValue, true);
         scale = outValue.getFloat();
-        Log.d(TAG, "alpha = " + alpha);
+        Log.d(TAG, "decrease_alpha = " + alpha);
 
         mCameraView = (CameraBridgeViewBase) findViewById(R.id.settingCameraView);
         mCameraView.setCvCameraViewListener(this);

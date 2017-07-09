@@ -4,13 +4,18 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="jp.ac.titech.itpro.sdl.scrollbycamera.MainActivity">
-
+    tools:context="jp.ac.titech.itpro.sdl.trackballemulator.MainActivity">
+<!--
     <org.opencv.android.JavaCameraView
         android:id="@+id/camera_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         />
+    -->
+    <jp.ac.titech.itpro.sdl.trackballemulator.MyJavaCameraView
+        android:id="@+id/my_camera_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
 
     <WebView
         android:id="@+id/web_view"

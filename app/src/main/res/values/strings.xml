@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">ScrollByCamera</string>
+    <string name="app_name">TrackballEmulator</string>
     <string name="action_camera">Camera</string>
     <string name="action_settings">Settings</string>
 

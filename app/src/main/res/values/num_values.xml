@@ -2,8 +2,8 @@
 <resources>
 
     <item name="alpha" format="float" type="dimen">0.7</item>
-    <item name="threshold" format="float" type="dimen">5</item>
-    <item name="scale" format="float" type="dimen">1</item>
+    <item name="threshold" format="float" type="dimen">3</item>
+    <item name="scale" format="float" type="dimen">2</item>
 
     <integer name="request">1000</integer>
     <integer name="result">100</integer>
