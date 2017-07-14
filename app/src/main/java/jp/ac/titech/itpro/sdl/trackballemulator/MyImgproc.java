@@ -11,21 +11,17 @@ import org.opencv.imgproc.Moments;
 class MyImgproc {
     final private static String TAG = "MyImgproc";
 
-    public static Moments contourMoments(MatOfPoint contour )
+    static Moments contourMoments(MatOfPoint contour )
     {
         Moments m = new Moments();
         int lpt = contour.checkVector(2);
-        boolean is_float = true;//(contour.depth() == CvType.CV_32F);
         Point[] ptsi = contour.toArray();
-//PointF[] ptsf = contour.toArray();
-
-        //CV_Assert( contour.depth() == CV_32S || contour.depth() == CV_32F );
 
         if( lpt == 0 )
             return m;
 
         double a00 = 0, a10 = 0, a01 = 0;
-        double xi, yi, xi2, yi2, xi_1, yi_1, dxy, xii_1, yii_1;
+        double xi, yi, xi_1, yi_1, dxy, xii_1, yii_1;
 
 
         {
@@ -41,8 +37,6 @@ class MyImgproc {
                 yi = ptsi[i].y;
             }
 
-            xi2 = xi * xi;
-            yi2 = yi * yi;
             dxy = xi_1 * yi - xi * yi_1;
             xii_1 = xi_1 + xi;
             yii_1 = yi_1 + yi;
