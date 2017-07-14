@@ -79,10 +79,11 @@ class MotionDetector {
         //Imgproc.cvtColor(image, image, Imgproc.COLOR_RGB2HSV);
         Imgproc.cvtColor(image_small, image_small, Imgproc.COLOR_RGB2HSV);
 
+        // debug用
         if (button) {
-            for (int y = 0; y < image_small.rows(); y++) {
-                for (int x = 0; x < image_small.cols(); x++) {
-                    double[] data = image_small.get(y, x);
+            for (int y = 0; y*2 < image_small.rows(); y++) {
+                for (int x = 0; x*2 < image_small.cols(); x++) {
+                    double[] data = image_small.get(y*2, x*2);
                     if (data.length >= 3) {
                         Log.d(TAG, "color is " +data[0] + " " + data[1] + " " + data[2]);
                     }
@@ -91,36 +92,39 @@ class MotionDetector {
             button = false;
         }
 
-        // lowとhighの2つの範囲を取って
-        Core.inRange(image_small, new Scalar(0, 0, 0), new Scalar(4, 255, 140), low_image);
-        Core.inRange(image_small, new Scalar(176, 0, 0), new Scalar(180, 255, 140), high_image);
-        Core.inRange(image_small, new Scalar(0, 0, 0), new Scalar(180, 255, 8), dark_image);
+        // ある程度明るくて赤っぽい：low,high
+        // すごく暗い：dark
+        Core.inRange(image_small, new Scalar(0, 0, 0), new Scalar(4, 255, 40), low_image);
+        Core.inRange(image_small, new Scalar(176, 0, 0), new Scalar(180, 255, 40), high_image);
+        Core.inRange(image_small, new Scalar(0, 0, 0), new Scalar(180, 255, 2), dark_image);
         // orで合成
-        //Core.bitwise_or(low_high_image, high_high_image, high_high_image);
         Core.bitwise_or(low_image, high_image, image_small);
         Core.bitwise_or(image_small, dark_image, image_small);
 
-        // 矩形を検出
+        // image1に保存
+        Imgproc.resize(image_small, image1, image1.size(), 0, 0, Imgproc.INTER_NEAREST);
+
+        // 輪郭を検出
         List<MatOfPoint> contours = new ArrayList<>();
         Mat hierarchy = new Mat(image_small.rows(), image_small.cols(), CvType.CV_8UC1);
-        Imgproc.findContours(image_small.clone(), contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_TC89_L1);
+        Imgproc.findContours(image_small, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_TC89_L1);
 
-        // 一定以上の大きさの矩形があるかどうか
+        // 一定以上の大きさの輪郭があるかどうか
         boolean exist = false;
         int index = 0;
         double max_area = image_small.rows() * image_small.cols();
         //Log.d(TAG, "contour size is " + contours.size());
         while (!exist && index < contours.size()) {
             double area = Imgproc.contourArea(contours.get(index), false);
-            if (area * 4 > max_area) exist = true;
+            if (area * 3 > max_area) exist = true;
             else index++;
         }
 
-        // 一定以上の大きさの矩形があれば
+        // 一定以上の大きさの輪郭があれば
         if (exist) {
             MatOfPoint max_contour = contours.get(index);
             Moments mu = MyImgproc.contourMoments(max_contour);
-            // 矩形の重心p
+            // 輪郭の重心p
             Point p = new Point(mu.get_m10()/mu.get_m00(), mu.get_m01()/mu.get_m00());
             if (point_prev != null) {
                 if (Math.abs(p.x - point_prev.x) > threshold) h_value += p.x - point_prev.x;
@@ -133,15 +137,18 @@ class MotionDetector {
             point_prev = null;
         }
 
-        Imgproc.resize(image_small, image1, image1.size(), 0, 0, Imgproc.INTER_NEAREST);
+        // image2に保存
         Imgproc.resize(rect, image2, image2.size(), 0, 0, Imgproc.INTER_NEAREST);
 
         Motion motion;
         switch (select) {
             case 1:
-                motion = new Motion(h_value, v_value, image1);
+                motion = new Motion(h_value, v_value, input);
                 break;
             case 2:
+                motion = new Motion(h_value, v_value, image1);
+                break;
+            case 3:
                 motion = new Motion(h_value, v_value, image2);
                 break;
             default:

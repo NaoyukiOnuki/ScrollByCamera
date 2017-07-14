@@ -7,41 +7,117 @@
     <TextView
         android:id="@+id/scale_text"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="20dp"
+        android:layout_height="0dp"
+        android:layout_weight="2"
+        android:layout_marginTop="10dp"
         android:gravity="center"
-        android:text="Scale"
+        android:text="@string/scale_setting"
         android:textColor="#000"
-        android:textSize="50sp"  />
+        android:textSize="40sp"  />
 
     <SeekBar
         android:id="@+id/scale_bar"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:background="#ccc"
-        android:layout_margin="20dp" />
+        android:layout_height="0dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_weight="1"
+        android:background="#ccc"/>
 
     <TextView
         android:id="@+id/threshold_text"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="20dp"
+        android:layout_height="0dp"
+        android:layout_weight="2"
+        android:layout_marginTop="10dp"
         android:gravity="center"
-        android:text="Threshold"
+        android:text="@string/threshold_setting"
         android:textColor="#000"
-        android:textSize="50sp"  />
+        android:textSize="40sp" />
 
     <SeekBar
         android:id="@+id/threshold_bar"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:background="#ccc"
-        android:layout_margin="20dp" />
+        android:layout_height="0dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_weight="1"
+        android:background="#ccc" />
 
-    <Button
-        android:id="@+id/save_button"
+    <TextView
+        android:id="@+id/inc_alpha_text"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="2"
+        android:layout_marginTop="10dp"
+        android:gravity="center"
+        android:text="@string/inc_alpha_setting"
+        android:textColor="#000"
+        android:textSize="40sp"  />
+
+    <SeekBar
+        android:id="@+id/inc_alpha_bar"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_weight="1"
+        android:background="#ccc" />
+
+    <TextView
+        android:id="@+id/dec_alpha_text"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="2"
+        android:layout_marginTop="10dp"
+        android:gravity="center"
+        android:text="@string/dec_alpha_setting"
+        android:textColor="#000"
+        android:textSize="40sp"  />
+
+    <SeekBar
+        android:id="@+id/dec_alpha_bar"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_weight="1"
+        android:background="#ccc" />
+
+    <LinearLayout
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="save settings"/>
+        android:layout_height="0dp"
+        android:layout_weight="2"
+        android:orientation="horizontal"
+        android:layout_gravity="center"
+        android:layout_marginTop="10dp">
+        <Button
+            android:id="@+id/initiate_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="@string/initiate_button_text"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="2"
+        android:orientation="horizontal"
+        android:layout_gravity="center"
+        android:layout_marginTop="10dp">
+        <Button
+            android:id="@+id/cancel_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="@string/cancel_button_text"/>
+        <Button
+            android:id="@+id/save_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="@string/save_button_text"/>
+    </LinearLayout>
 
 </LinearLayout>

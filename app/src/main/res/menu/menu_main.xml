@@ -10,17 +10,21 @@
         android:title="@string/action_camera"
         android:orderInCategory="101"
         app:showAsAction="never" />
+    <item android:id="@+id/action_exposure"
+        android:title="@string/action_exposure"
+        android:orderInCategory="102"
+        app:showAsAction="never" />
     <item android:id="@+id/action_1"
         android:title="1"
-        android:orderInCategory="102"
+        android:orderInCategory="103"
         app:showAsAction="never" />
     <item android:id="@+id/action_2"
         android:title="2"
-        android:orderInCategory="103"
+        android:orderInCategory="104"
         app:showAsAction="never" />
     <item android:id="@+id/action_3"
         android:title="3"
-        android:orderInCategory="104"
+        android:orderInCategory="105"
         app:showAsAction="never" />
 
 </menu>

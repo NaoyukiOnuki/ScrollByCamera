@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
@@ -28,7 +29,7 @@ public class CameraSettingsActivity extends Activity implements CameraBridgeView
     final int RESULT_SUB = 100;
     Intent intent;
 
-    float alpha, threshold, scale;
+    float inc_alpha, dec_alpha, threshold, scale;
 
     boolean isDown = true;
     List<Float> vlist = new ArrayList<>();
@@ -64,16 +65,7 @@ public class CameraSettingsActivity extends Activity implements CameraBridgeView
 
         intent = new Intent();
 
-        TypedValue outValue = new TypedValue();
-        getResources().getValue(R.dimen.alpha, outValue, true);
-        alpha = outValue.getFloat();
-        outValue = new TypedValue();
-        getResources().getValue(R.dimen.threshold, outValue, true);
-        threshold = outValue.getFloat();
-        outValue = new TypedValue();
-        getResources().getValue(R.dimen.scale, outValue, true);
-        scale = outValue.getFloat();
-        Log.d(TAG, "decrease_alpha = " + alpha);
+        getSettings();
 
         mCameraView = (CameraBridgeViewBase) findViewById(R.id.settingCameraView);
         mCameraView.setCvCameraViewListener(this);
@@ -193,5 +185,21 @@ public class CameraSettingsActivity extends Activity implements CameraBridgeView
         e.apply();
         hlist.clear();
         vlist.clear();
+    }
+
+    private void getSettings() {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        TypedValue outValue = new TypedValue();
+        getResources().getValue(R.dimen.inc_alpha, outValue, true);
+        inc_alpha = sharedPreferences.getFloat("inc_alpha", outValue.getFloat());
+        outValue = new TypedValue();
+        getResources().getValue(R.dimen.dec_alpha, outValue, true);
+        dec_alpha = sharedPreferences.getFloat("dec_alpha", outValue.getFloat());
+        outValue = new TypedValue();
+        getResources().getValue(R.dimen.threshold, outValue, true);
+        threshold = sharedPreferences.getFloat("threshold", outValue.getFloat());
+        outValue = new TypedValue();
+        getResources().getValue(R.dimen.scale, outValue, true);
+        scale = sharedPreferences.getFloat("scale", outValue.getFloat());
     }
 }

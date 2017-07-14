@@ -18,13 +18,13 @@ public class SettingsActivity extends Activity {
 
     String TAG = "SettingsActivity";
 
-    float alpha, threshold, scale;
+    float inc_alpha, dec_alpha, threshold, scale;
 
     SharedPreferences sharedPreferences;
     SharedPreferences.Editor editor;
 
-    TextView scaleText, thresholdText;
-    SeekBar scaleBar, thresholdBar;
+    TextView scaleText, thresholdText, incText, decText;
+    SeekBar scaleBar, thresholdBar, incBar, decBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,29 +36,45 @@ public class SettingsActivity extends Activity {
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         editor = sharedPreferences.edit();
 
-        TypedValue outValue = new TypedValue();
-        getResources().getValue(R.dimen.alpha, outValue, true);
-        alpha = sharedPreferences.getFloat("alpha", outValue.getFloat());
-        outValue = new TypedValue();
-        getResources().getValue(R.dimen.threshold, outValue, true);
-        threshold = sharedPreferences.getFloat("threshold", outValue.getFloat());
-        outValue = new TypedValue();
-        getResources().getValue(R.dimen.scale, outValue, true);
-        scale = sharedPreferences.getFloat("scale", outValue.getFloat());
+        getSettings();
+
+        findViewById(R.id.initiate_button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                TypedValue outValue = new TypedValue();
+                getResources().getValue(R.dimen.inc_alpha, outValue, true);
+                inc_alpha = outValue.getFloat();
+                outValue = new TypedValue();
+                getResources().getValue(R.dimen.dec_alpha, outValue, true);
+                dec_alpha = outValue.getFloat();
+                outValue = new TypedValue();
+                getResources().getValue(R.dimen.threshold, outValue, true);
+                threshold = outValue.getFloat();
+                outValue = new TypedValue();
+                getResources().getValue(R.dimen.scale, outValue, true);
+                scale = outValue.getFloat();
+                scaleBar.setProgress((int)(scale*100));
+                thresholdBar.setProgress((int)(threshold*100));
+                incBar.setProgress((int)(inc_alpha*100-1));
+                decBar.setProgress((int)(dec_alpha*100-1));
+            }
+        });
+
+        findViewById(R.id.cancel_button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
 
         findViewById(R.id.save_button).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                editor.putFloat("scale", (float)scaleBar.getProgress() / 100);
+                editor.putFloat("threshold", (float)thresholdBar.getProgress() / 100);
+                editor.putFloat("inc_alpha", (float)(incBar.getProgress()+1) / 100);
+                editor.putFloat("dec_alpha", (float)(decBar.getProgress()+1) / 100);
                 editor.apply();
-                TypedValue outValue = new TypedValue();
-                outValue = new TypedValue();
-                getResources().getValue(R.dimen.threshold, outValue, true);
-                threshold = sharedPreferences.getFloat("threshold", 0);
-                outValue = new TypedValue();
-                getResources().getValue(R.dimen.scale, outValue, true);
-                scale = sharedPreferences.getFloat("scale", -1);
-
-                Log.d(TAG, "thre, scale = " + threshold + ", " + scale);
                 finish();
             }
         });
@@ -67,48 +83,36 @@ public class SettingsActivity extends Activity {
 
         scaleText = (TextView) findViewById(R.id.scale_text);
         thresholdText = (TextView) findViewById(R.id.threshold_text);
+        incText = (TextView) findViewById(R.id.inc_alpha_text);
+        decText = (TextView) findViewById(R.id.dec_alpha_text);
         scaleBar = (SeekBar) findViewById(R.id.scale_bar);
         thresholdBar = (SeekBar) findViewById(R.id.threshold_bar);
+        incBar = (SeekBar) findViewById(R.id.inc_alpha_bar);
+        decBar = (SeekBar) findViewById(R.id.dec_alpha_bar);
         // max value
-        scaleBar.setMax(500);
+        scaleBar.setMax(300);
         thresholdBar.setMax(500);
+        incBar.setMax(98);
+        decBar.setMax(98);
         // init value
         scaleBar.setProgress((int)(scale*100));
         thresholdBar.setProgress((int)(threshold*100));
-        // set listener
-        scaleBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+        incBar.setProgress((int)(inc_alpha*100-1));
+        decBar.setProgress((int)(dec_alpha*100-1));
+    }
 
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                editor.putFloat("scale", (float)seekBar.getProgress() / 100);
-                Log.d(TAG, "put scale " + (float)seekBar.getProgress() / 100);
-            }
-        });
-        thresholdBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                editor.putFloat("threshold", (float)seekBar.getProgress() / 100);
-                Log.d(TAG, "put threshold " + (float)seekBar.getProgress() / 100);
-            }
-        });
+    private void getSettings() {
+        TypedValue outValue = new TypedValue();
+        getResources().getValue(R.dimen.inc_alpha, outValue, true);
+        inc_alpha = sharedPreferences.getFloat("inc_alpha", outValue.getFloat());
+        outValue = new TypedValue();
+        getResources().getValue(R.dimen.dec_alpha, outValue, true);
+        dec_alpha = sharedPreferences.getFloat("dec_alpha", outValue.getFloat());
+        outValue = new TypedValue();
+        getResources().getValue(R.dimen.threshold, outValue, true);
+        threshold = sharedPreferences.getFloat("threshold", outValue.getFloat());
+        outValue = new TypedValue();
+        getResources().getValue(R.dimen.scale, outValue, true);
+        scale = sharedPreferences.getFloat("scale", outValue.getFloat());
     }
 }

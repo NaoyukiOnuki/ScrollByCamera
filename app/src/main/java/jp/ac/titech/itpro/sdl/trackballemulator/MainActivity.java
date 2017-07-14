@@ -1,18 +1,24 @@
 package jp.ac.titech.itpro.sdl.trackballemulator;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
 import android.hardware.Camera;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.Button;
+import android.widget.EditText;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
@@ -31,9 +37,12 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     final int RESULT_SUB = 100;
 
     WebView webView;
+    Button back, forward;
+    EditText urlView;
+    InputMethodManager inputMethodManager; //キーボード表示を制御
     int scrollVertical = 0;
     int scrollHorizontal = 0;
-    float decrease_alpha, threshold, scale;
+    float inc_alpha, dec_alpha, threshold, scale; // パラメータ
 
     Vector2D vvector = new Vector2D(1, 0);
     Vector2D hvector = new Vector2D(0, -1);
@@ -42,10 +51,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     MotionDetector detector;
 
-    Timer timer = new Timer();
-
-    SharedPreferences sharedPreferences;
-    SharedPreferences.Editor editor;
+    Timer timer;
 
     Boolean button = false;
 
@@ -71,32 +77,12 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-
-        Camera camera = Camera.open();
-        Camera.Parameters p = camera.getParameters();
-        p.setExposureCompensation(10);
-        p.setAutoExposureLock(true);
-        Log.d(TAG, "camera params = " + p.getMinExposureCompensation() + " " + p.getMaxExposureCompensation() + " " + p.getExposureCompensation());
-        camera.release();
-
-
         setContentView(R.layout.activity_main);
 
         Log.d(TAG, "onCreate");
 
-        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        editor = sharedPreferences.edit();
-
-        TypedValue outValue = new TypedValue();
-        getResources().getValue(R.dimen.alpha, outValue, true);
-        decrease_alpha = sharedPreferences.getFloat("alpha", outValue.getFloat());
-        outValue = new TypedValue();
-        getResources().getValue(R.dimen.threshold, outValue, true);
-        threshold = sharedPreferences.getFloat("threshold", outValue.getFloat());
-        outValue = new TypedValue();
-        getResources().getValue(R.dimen.scale, outValue, true);
-        scale = sharedPreferences.getFloat("scale", outValue.getFloat());
-
+        getSettings();
+/*
         SharedPreferences pref = getPreferences(MODE_PRIVATE);
         float x1 = pref.getFloat(getString(R.string.key_x1), 1);
         float y1 = pref.getFloat(getString(R.string.key_y1), 0);
@@ -106,13 +92,41 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         Log.d(TAG, "hvector = (" + x2 + ", " + y2 + ")");
         vvector = new Vector2D(x1, y1);
         hvector = new Vector2D(x2, y2);
+*/
+        back = (Button) findViewById(R.id.back_button);
+        forward = (Button) findViewById(R.id.forward_button);
+        back.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (webView.canGoBack()) webView.goBack();
+            }
+        });
+        forward.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (webView.canGoForward()) webView.goForward();
+            }
+        });
 
         webView = (WebView) findViewById(R.id.web_view);
-        //リンクをタップしたときに標準ブラウザを起動させない
-        webView.setWebViewClient(new WebViewClient());
+        // リンクをタップしたときに標準ブラウザを起動させない
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageStarted(WebView view, String url, Bitmap favicon) {
+                super.onPageStarted(view, url, favicon);
+            }
 
-        //最初にYahoo! Japanのページを表示する。
-        webView.loadUrl("http://www.yahoo.co.jp/");
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                back.setEnabled(webView.canGoBack());
+                forward.setEnabled(webView.canGoForward());
+                urlView.setText(webView.getUrl());
+                super.onPageFinished(view, url);
+            }
+        });
+
+        // 初期画面
+        webView.loadUrl("https://www.google.co.jp/?gws_rd=ssl#q=トラックボール");
         webView.getSettings().setBuiltInZoomControls(true);
         webView.getSettings().setJavaScriptEnabled(true);
 
@@ -120,33 +134,34 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         mCameraView.setCvCameraViewListener(this);
         //mCameraView.setVisibility(View.GONE);
 
+        inputMethodManager = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+        urlView = (EditText) findViewById(R.id.url_view);
+        urlView.setOnKeyListener(new View.OnKeyListener() {
+            @Override
+            public boolean onKey(View v, int keyCode, KeyEvent event) {
+                // ボタンが押されてなおかつエンターキーだったとき
+                if((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)){
+                    // キーボードを閉じる
+                    inputMethodManager.hideSoftInputFromWindow(urlView.getWindowToken(), InputMethodManager.RESULT_UNCHANGED_SHOWN);
+                    // フォーカスをwebviewに
+                    webView.requestFocus();
+                    // URLに飛ぶ
+                    webView.loadUrl(urlView.getText().toString());
+                    Log.d(TAG, "enter key");
+                    return true;
+                }
+                return false;
+            }
+        });
+/*
         findViewById(R.id.button).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 button = true;
                 detector.button = true;
-                // カメラの自動露出補正を1秒間働かせて、使用環境の光量に合わせる
-                final Camera c = mCameraView.getCamera();
-                final Camera.Parameters p = c.getParameters();
-                p.setAutoExposureLock(false);
-                c.setParameters(p);
-                Timer timer = new Timer();
-                timer.schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        p.setAutoExposureLock(true);
-                        c.setParameters(p);
-                    }
-                }, 1000);
             }
         });
-
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                webView.scrollBy((int) (scrollHorizontal * scale), (int) (scrollVertical * scale));
-            }
-        }, 10, 10);
+*/
 
 
     }
@@ -154,38 +169,42 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     @Override
     public void onCameraViewStarted(int width, int height) {
         Log.d(TAG, "onCameraViewStarted");
-        Camera.Parameters params = mCameraView.getCamera().getParameters();
-        // カメラの自動露出補正を切る
-        params.setAutoExposureLock(true);
-        mCameraView.getCamera().setParameters(params);
+        autoExposure1sec();
         detector = new MotionDetector(width, height, threshold);
+
+        timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                webView.scrollBy((int) (scrollHorizontal * scale), (int) (scrollVertical * scale));
+            }
+        }, 10, 10);
     }
 
     @Override
     public void onCameraViewStopped() {
+        Log.d(TAG, "onCameraViewStopped");
+        timer.cancel();
     }
 
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         //Log.d(TAG, "onCameraFrame");
 
-        if (button) {
-            button = false;
-        }
-
         MotionDetector.Motion motion = detector.onCameraFrame(inputFrame.rgba());
         Vector2D v = new Vector2D(motion.x * scale, motion.y * scale);
         double[] comp = Vector2D.decompose(v, hvector, vvector);
-        float increase_alpha = 0.4f;
-        if (comp[0] == 0) {
-            scrollHorizontal = (int) (decrease_alpha * scrollHorizontal);
-        } else {
-            scrollHorizontal = (int) (increase_alpha * scrollHorizontal + (1-increase_alpha) * comp[0]);
+        if (false) {
+            if (comp[0] == 0) {
+                scrollHorizontal = (int) ((1 - dec_alpha) * scrollHorizontal);
+            } else {
+                scrollHorizontal = (int) ((1 - inc_alpha) * scrollHorizontal + inc_alpha * comp[0]);
+            }
         }
         if (comp[1] == 0) {
-            scrollVertical = (int) (decrease_alpha * scrollVertical);
+            scrollVertical = (int) ((1-dec_alpha) * scrollVertical);
         } else {
-            scrollVertical = (int) (increase_alpha * scrollVertical + (1-increase_alpha) * comp[1]);
+            scrollVertical = (int) ((1-inc_alpha) * scrollVertical + inc_alpha * comp[1]);
         }
         //scrollVertical = (int) (decrease_alpha * scrollVertical + (1 - decrease_alpha) * comp[1]);
         //Log.d(TAG, "update scroll value " + horizontalAverage + " " + verticalAverage + " " + comp[0] + " " + comp[1]);
@@ -196,7 +215,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     @Override
     public void onResume() {
         super.onResume();
-        OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_0_0, this, mCallBack);
+        OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_2_0, this, mCallBack);
     }
 
     @Override
@@ -235,6 +254,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
                 startActivityForResult(intent, REQUEST_SUB);
                 break;
+            case R.id.action_exposure:
+                autoExposure1sec();
+                break;
             case R.id.action_1:
                 detector.select = 1;
                 break;
@@ -252,33 +274,50 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-/*
-        if (requestCode == REQUEST_SUB || resultCode == RESULT_SUB && data != null) {
-            float x1 = data.getFloatExtra(getString(R.string.key_x1), 1);
-            float y1 = data.getFloatExtra(getString(R.string.key_y1), 0);
-            float x2 = data.getFloatExtra(getString(R.string.key_x2), 0);
-            float y2 = data.getFloatExtra(getString(R.string.key_y2), -1);
-            Log.d(TAG, "vvector = (" + x1 + ", " + y1 + ")");
-            Log.d(TAG, "hvector = (" + x2 + ", " + y2 + ")");
-            vvector = new Vector2D(x1, y1).normalization();
-            hvector = new Vector2D(x2, y2).normalization();
+
+        getSettings();
+
+        Log.d(TAG, "thre, scale, inc, dec = " + threshold + ", " + scale + ", " + inc_alpha + ", " + dec_alpha);
+        if (detector != null) {
+            detector.setThreshold(threshold);
         }
-*/
+    }
 
-
+    private void getSettings() {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         TypedValue outValue = new TypedValue();
-        getResources().getValue(R.dimen.alpha, outValue, true);
-        decrease_alpha = sharedPreferences.getFloat("alpha", outValue.getFloat());
+        getResources().getValue(R.dimen.inc_alpha, outValue, true);
+        inc_alpha = sharedPreferences.getFloat("inc_alpha", outValue.getFloat());
+        outValue = new TypedValue();
+        getResources().getValue(R.dimen.dec_alpha, outValue, true);
+        dec_alpha = sharedPreferences.getFloat("dec_alpha", outValue.getFloat());
         outValue = new TypedValue();
         getResources().getValue(R.dimen.threshold, outValue, true);
         threshold = sharedPreferences.getFloat("threshold", outValue.getFloat());
         outValue = new TypedValue();
         getResources().getValue(R.dimen.scale, outValue, true);
         scale = sharedPreferences.getFloat("scale", outValue.getFloat());
+    }
 
-        Log.d(TAG, "thre, scale = " + threshold + ", " + scale);
-        if (detector != null) {
-            detector.setThreshold(threshold);
-        }
+    // カメラの自動露出補正を1秒間働かせて、使用環境の光量に合わせる
+    private void autoExposure1sec() {
+        Log.d(TAG, "enable autoExposure");
+        final Camera c = mCameraView.getCamera();
+        final Camera.Parameters p = c.getParameters();
+        p.setAutoExposureLock(false);
+        c.setParameters(p);
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                Log.d(TAG, "disable autoExposure");
+                try {
+                    p.setAutoExposureLock(true);
+                    c.setParameters(p);
+                } catch (Exception e) {
+                    Log.d(TAG, Log.getStackTraceString(e));
+                }
+            }
+        }, 1000);
     }
 }
