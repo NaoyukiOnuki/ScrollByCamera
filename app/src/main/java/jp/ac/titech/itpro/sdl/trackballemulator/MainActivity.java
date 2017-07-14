@@ -44,8 +44,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     int scrollHorizontal = 0;
     float inc_alpha, dec_alpha, threshold, scale; // パラメータ
 
-    Vector2D vvector = new Vector2D(1, 0);
-    Vector2D hvector = new Vector2D(0, -1);
+    Vector2D vvector = new Vector2D(1, 0);  // 右方向の単位ベクトル
+    Vector2D hvector = new Vector2D(0, -1); // 下方向の単位ベクトル
 
     MyJavaCameraView mCameraView;
 
@@ -53,7 +53,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     Timer timer;
 
-    Boolean button = false;
+    Boolean button = false; // debug用
 
 
     // OpenCVライブラリのロード
@@ -82,17 +82,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         Log.d(TAG, "onCreate");
 
         getSettings();
-/*
-        SharedPreferences pref = getPreferences(MODE_PRIVATE);
-        float x1 = pref.getFloat(getString(R.string.key_x1), 1);
-        float y1 = pref.getFloat(getString(R.string.key_y1), 0);
-        float x2 = pref.getFloat(getString(R.string.key_x2), 0);
-        float y2 = pref.getFloat(getString(R.string.key_y2), -1);
-        Log.d(TAG, "vvector = (" + x1 + ", " + y1 + ")");
-        Log.d(TAG, "hvector = (" + x2 + ", " + y2 + ")");
-        vvector = new Vector2D(x1, y1);
-        hvector = new Vector2D(x2, y2);
-*/
+
         back = (Button) findViewById(R.id.back_button);
         forward = (Button) findViewById(R.id.forward_button);
         back.setOnClickListener(new View.OnClickListener() {
@@ -153,17 +143,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 return false;
             }
         });
-/*
-        findViewById(R.id.button).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                button = true;
-                detector.button = true;
-            }
-        });
-*/
-
-
     }
 
     @Override
@@ -193,7 +172,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
         MotionDetector.Motion motion = detector.onCameraFrame(inputFrame.rgba());
         Vector2D v = new Vector2D(motion.x * scale, motion.y * scale);
-        double[] comp = Vector2D.decompose(v, hvector, vvector);
+        double[] comp = Vector2D.decompose(v, hvector, vvector); // ベクトルvをhvector,vvectorの2方向の成分に分解
+        // don't scroll horizontally
         if (false) {
             if (comp[0] == 0) {
                 scrollHorizontal = (int) ((1 - dec_alpha) * scrollHorizontal);
@@ -206,8 +186,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         } else {
             scrollVertical = (int) ((1-inc_alpha) * scrollVertical + inc_alpha * comp[1]);
         }
-        //scrollVertical = (int) (decrease_alpha * scrollVertical + (1 - decrease_alpha) * comp[1]);
-        //Log.d(TAG, "update scroll value " + horizontalAverage + " " + verticalAverage + " " + comp[0] + " " + comp[1]);
 
         return motion.image;
     }

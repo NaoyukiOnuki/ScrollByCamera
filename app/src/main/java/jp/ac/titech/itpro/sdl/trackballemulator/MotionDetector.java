@@ -41,7 +41,7 @@ class MotionDetector {
 
     private Mat image_small, high_image, low_image, dark_image;
     private Mat rect;
-    private Mat image1, image2, image3;
+    private Mat image1, image2;
 
     private Point point_prev;
 
@@ -55,7 +55,6 @@ class MotionDetector {
 
         image1 = new Mat(height, width, CvType.CV_8UC3);
         image2 = new Mat(height, width, CvType.CV_8UC3);
-        image3 = new Mat(height, width, CvType.CV_8UC3);
 
         this.threshold = threshold;
 
@@ -92,7 +91,7 @@ class MotionDetector {
             button = false;
         }
 
-        // ある程度明るくて赤っぽい：low,high
+        // 赤くてある程度明るい：low,high
         // すごく暗い：dark
         Core.inRange(image_small, new Scalar(0, 0, 0), new Scalar(4, 255, 40), low_image);
         Core.inRange(image_small, new Scalar(176, 0, 0), new Scalar(180, 255, 40), high_image);
